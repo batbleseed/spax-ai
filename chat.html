@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spax AI Chat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="chat-body">
+
+<div class="sidebar">
+<h2>SPAX AI</h2>
+<button onclick="newChat()">+ New Chat</button>
+<button onclick="changeKey()">Settings</button>
+<a href="index.html">Home</a>
+</div>
+
+<div class="main">
+<div class="chat-header">Spax AI</div>
+<div id="chat" class="chat-area"></div>
+
+<div class="input-row">
+<input id="message" placeholder="Message Spax AI..." onkeydown="if(event.key==='Enter')sendMessage()">
+<button onclick="sendMessage()">Send</button>
+</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

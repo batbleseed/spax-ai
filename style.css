@@ -1,0 +1,19 @@
+body{margin:0;font-family:Segoe UI,sans-serif;background:#070b18;color:white}
+.stars{position:fixed;inset:0;background-image:radial-gradient(white 1px,transparent 1px);background-size:40px 40px;opacity:.15;z-index:-1}
+nav{display:flex;justify-content:space-between;padding:20px;background:#111827}
+.logo{font-weight:bold}
+.nav-links a,.launch-btn,a{color:white;text-decoration:none;margin-left:15px}
+.hero{text-align:center;padding:120px 20px}
+.btn,.launch-btn,button{background:#6d5cff;color:white;border:none;padding:10px 16px;border-radius:10px;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;padding:20px}
+.card{background:#111827;padding:20px;border-radius:12px}
+.chat-body{display:flex;height:100vh}
+.sidebar{width:240px;background:#111827;padding:15px;display:flex;flex-direction:column;gap:10px}
+.main{flex:1;display:flex;flex-direction:column}
+.chat-header{padding:15px;border-bottom:1px solid #333}
+.chat-area{flex:1;padding:20px;overflow:auto}
+.msg{padding:10px 14px;border-radius:10px;margin:8px 0;max-width:75%}
+.user{background:#6d5cff;margin-left:auto}
+.ai{background:#1f2937}
+.input-row{display:flex;gap:10px;padding:15px;border-top:1px solid #333}
+.input-row input{flex:1;padding:12px;border-radius:10px;border:none;background:#1f2937;color:white}
