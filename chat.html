@@ -266,20 +266,25 @@
         </div>
     </div>
 
-    <script>
-        // Firebase Configuration - REPLACE WITH YOUR OWN!
-        const firebaseConfig = {
-  apiKey: "AIzaSyDmDII8ceiGGff8VDUbhFyWiFVhxIkGfNE",
-  authDomain: "spax-ai.firebaseapp.com",
-  projectId: "spax-ai",
-  storageBucket: "spax-ai.firebasestorage.app",
-  messagingSenderId: "924074191093",
-  appId: "1:924074191093:web:b164bc2d54b351467a7dbc"
-};
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDmDII8ceiGGff8VDUbhFyWiFVhxIkGfNE",
+    authDomain: "spax-ai.firebaseapp.com",
+    projectId: "spax-ai",
+    storageBucket: "spax-ai.firebasestorage.app",
+    messagingSenderId: "924074191093",
+    appId: "1:924074191093:web:b164bc2d54b351467a7dbc"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+   const auth = firebase.auth();
         const db = firebase.firestore();
 
         const $ = id => document.getElementById(id);
@@ -295,6 +300,12 @@
             },
             user: null
         };
+</script>
+
+    <script>
+       
+
+       
 
         // Auth State Observer
         auth.onAuthStateChanged(user => {
@@ -703,3 +714,4 @@
         init();
     </script>
 </body>
+</html>
