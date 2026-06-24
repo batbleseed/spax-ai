@@ -324,7 +324,9 @@
             list.querySelectorAll('.chat-item').forEach(el => { el.onclick = (e) => { if (e.target.closest('.icon-btn')) return; switchChat(el.dataset.id); closeDrawer(); }; });
         }
 
-        function renderWelcome() { $('chat-wrap').innerHTML = `<div class="welcome"><div class="w-logo">S</div><h1>Spax AI</h1><p>Your intelligent mobile assistant</p><div class="sug-list"><div class="sug-card" onclick="useSug('Explain quantum computing simply')"><div class="sug-t">💡 Explain a concept</div><div class="sug-d">Quantum computing in simple terms</div></div><div class="sug-card" onclick="useSug('Write a Python script')"><div class="sug-t">💻 Write code</div><div class="sug-d">Python script example</div></div><div class="sug-card" onclick="useSug('Give me 5 story ideas')"><div class="sug-t"> Brainstorm</div><div class="sug-d">5 creative story ideas</div></div></div></div>`; }
+        function renderWelcome() { $('chat-wrap').innerHTML = `<div class="welcome"><div class="w-logo">
+    <img src="spax-ai.png" alt="Spax AI Logo" style="width: 60%; height: 60%; object-fit: contain;">
+</div>h1>Spax AI</h1><p>Your intelligent mobile assistant</p><div class="sug-list"><div class="sug-card" onclick="useSug('Explain quantum computing simply')"><div class="sug-t">💡 Explain a concept</div><div class="sug-d">Quantum computing in simple terms</div></div><div class="sug-card" onclick="useSug('Write a Python script')"><div class="sug-t">💻 Write code</div><div class="sug-d">Python script example</div></div><div class="sug-card" onclick="useSug('Give me 5 story ideas')"><div class="sug-t"> Brainstorm</div><div class="sug-d">5 creative story ideas</div></div></div></div>`; }
         function renderChat() { const c = state.chats[state.activeId]; if (!c) return renderWelcome(); $('chat-wrap').innerHTML = ''; c.messages.forEach(m => appendMsg(m.role, m.content, false)); scrollDown(); }
         function appendMsg(role, content, anim=true) {
             const w = $('chat-wrap'); if (w.querySelector('.welcome')) w.innerHTML = '';
