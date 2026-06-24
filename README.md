@@ -40,6 +40,21 @@ Spax AI is split into three main components:
 
 ---
 
+## 📱 Mobile App
+
+Spax AI has a dedicated mobile-optimized UI! Open `mobile.html` on your phone and add it to your home screen for a native app experience.
+
+**Mobile Features:**
+- Bottom navigation bar
+- Swipe gestures for chat history
+- Floating action button
+- Full-screen modals
+- PWA installable (Add to Home Screen)
+- Safe area support for notches
+- Voice input optimized for mobile
+
+---
+
 ## 🚀 Setup & Installation
 
 Want to run your own version of Spax AI? Follow these steps!
