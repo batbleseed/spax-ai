@@ -1,706 +1,309 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spax AI</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root { --sidebar-w: 280px; --max-w: 800px; --rad: 12px; --rad-sm: 8px; --trans: 0.3s; }
-        [data-theme="dark"] { --bg1:#1a1a1a; --bg2:#212121; --bg3:#2f2f2f; --bg-h:#3a3a3a; --bg-a:#444; --t1:#ececec; --t2:#b4b4b4; --t3:#8e8e8e; --acc:#10a37f; --acc-h:#0d8c6d; --acc-l:rgba(16,163,127,0.15); --brd:#3a3a3a; --code:#1e1e1e; }
-        [data-theme="light"] { --bg1:#fff; --bg2:#f9f9f9; --bg3:#f0f0f0; --bg-h:#e5e5e5; --bg-a:#dcdcdc; --t1:#1a1a1a; --t2:#555; --t3:#888; --acc:#10a37f; --acc-h:#0d8c6d; --acc-l:rgba(16,163,127,0.1); --brd:#e0e0e0; --code:#f6f8fa; }
-        * { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:system-ui,sans-serif; background:var(--bg1); color:var(--t1); height:100vh; display:flex; overflow:hidden; transition:background var(--trans); }
-        button,input,textarea { font-family:inherit; border:none; outline:none; background:none; color:inherit; }
-        ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-thumb { background:var(--t3); border-radius:3px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spax AI - The Galaxy of Intelligence</title>
 
-        .app { display:flex; width:100%; height:100%; }
-        .sidebar { width:var(--sidebar-w); background:var(--bg2); border-right:1px solid var(--brd); display:flex; flex-direction:column; transition:width var(--trans); overflow:hidden; flex-shrink:0; }
-        .sidebar.collapsed { width:0; border-right:none; }
-        .side-h { padding:16px; display:flex; gap:10px; }
-        .btn-new { flex:1; padding:12px; background:var(--bg3); border:1px solid var(--brd); border-radius:var(--rad-sm); font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .btn-new:hover { background:var(--bg-h); }
-        .history { flex:1; overflow-y:auto; padding:0 12px 12px; }
-        .hist-title { font-size:0.75rem; color:var(--t3); text-transform:uppercase; padding:12px 8px 6px; }
-        .chat-item { display:flex; align-items:center; padding:10px 12px; border-radius:var(--rad-sm); cursor:pointer; font-size:0.9rem; color:var(--t2); margin-bottom:2px; }
-        .chat-item:hover { background:var(--bg-h); color:var(--t1); }
-        .chat-item.active { background:var(--bg-a); color:var(--t1); }
-        .chat-title { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .chat-actions { display:none; gap:4px; }
-        .chat-item:hover .chat-actions { display:flex; }
-        .c-btn { width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:4px; color:var(--t3); cursor:pointer; }
-        .c-btn:hover { background:var(--bg3); color:var(--t1); }
-        .side-f { padding:12px; border-top:1px solid var(--brd); }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        .main { flex:1; display:flex; flex-direction:column; position:relative; overflow:hidden; }
-        .main-h { height:60px; display:flex; align-items:center; padding:0 20px; border-bottom:1px solid var(--brd); gap:12px; justify-content:space-between; }
-        .main-h-left { display:flex; align-items:center; gap:12px; }
-        .main-h h1 { font-size:1.1rem; font-weight:600; }
-        .h-actions { display:flex; gap:8px; align-items:center; }
-        .icon-btn { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:var(--rad-sm); cursor:pointer; color:var(--t2); position:relative; }
-        .icon-btn:hover { background:var(--bg-h); color:var(--t1); }
-        
-      .profile-btn { display:flex; align-items:center; gap:8px; padding:6px 12px; background:var(--bg3); border-radius:20px; cursor:pointer; position: relative; }
-        .profile-btn:hover { background:var(--bg-h); }
-        .profile-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--acc),var(--acc-h)); display:flex; align-items:center; justify-content:center; font-weight:bold; color:white; }
-        .profile-name { font-size:0.9rem; font-weight:500; }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-        .chat-area { flex:1; overflow-y:auto; padding:20px; }
-        .chat-wrap { max-width:var(--max-w); margin:0 auto; display:flex; flex-direction:column; gap:24px; }
-        
-        .welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
-        .w-logo { width:60px; height:60px; background:linear-gradient(135deg,var(--acc),var(--acc-h)); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:2rem; color:white; margin-bottom:20px; }
-        .sug-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; width:100%; max-width:700px; margin-top:40px; }
-        .sug-card { background:var(--bg2); border:1px solid var(--brd); border-radius:var(--rad); padding:16px; text-align:left; cursor:pointer; transition:transform 0.2s, border-color 0.2s; }
-        .sug-card:hover { border-color:var(--acc); transform:translateY(-2px); }
-        .sug-t { font-weight:600; margin-bottom:4px; }
-        .sug-d { font-size:0.85rem; color:var(--t3); }
+body{
+    font-family:'Inter',sans-serif;
+    background:#050816;
+    color:white;
+    overflow-x:hidden;
+}
 
-        .msg { display:flex; gap:16px; animation:fade 0.3s; }
-        @keyframes fade { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        .avatar { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0; font-size:1.2rem; }
-        .msg.user .avatar { background:#5436DA; color:white; font-size:0.9rem; }
-        .msg.assistant .avatar { background:linear-gradient(135deg,var(--acc),var(--acc-h)); color:white; }
-        .msg-content { flex:1; min-width:0; }
-        .msg-role { font-weight:600; font-size:0.9rem; margin-bottom:4px; }
-        .msg-bubble { font-size:0.95rem; line-height:1.7; }
-        .msg.user .msg-bubble { background:var(--bg3); padding:12px 16px; border-radius:var(--rad); display:inline-block; }
-        .msg-actions { display:flex; gap:8px; margin-top:8px; opacity:0; transition:opacity 0.2s; }
-        .msg:hover .msg-actions { opacity:1; }
-        .m-btn { display:flex; align-items:center; gap:4px; padding:4px 8px; font-size:0.8rem; color:var(--t3); border-radius:6px; cursor:pointer; }
-        .m-btn:hover { background:var(--bg-h); color:var(--t1); }
-        .m-btn svg { width:14px; height:14px; }
+/* Galaxy Background */
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+    radial-gradient(circle at 20% 20%,rgba(124,58,237,.35),transparent 25%),
+    radial-gradient(circle at 80% 30%,rgba(59,130,246,.25),transparent 25%),
+    radial-gradient(circle at 50% 90%,rgba(236,72,153,.15),transparent 25%);
+    z-index:-2;
+}
 
-        .file-attachments { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-        .file-tag { background:var(--bg-h); padding:4px 8px; border-radius:6px; font-size:0.8rem; display:flex; align-items:center; gap:4px; }
-        .file-tag button { cursor:pointer; color:var(--t3); }
-        .file-tag button:hover { color:var(--t1); }
+.stars{
+    position:fixed;
+    inset:0;
+    background-image:
+    radial-gradient(white 1px, transparent 1px);
+    background-size:40px 40px;
+    opacity:.15;
+    z-index:-1;
+}
 
-        .msg-bubble p { margin-bottom:12px; } .msg-bubble p:last-child { margin-bottom:0; }
-        .msg-bubble ul, .msg-bubble ol { margin:12px 0; padding-left:24px; }
-        .msg-bubble code:not(pre code) { background:var(--code); padding:2px 6px; border-radius:4px; font-family:monospace; font-size:0.85em; color:#e06c75; }
-        .code-wrap { position:relative; margin:16px 0; border-radius:var(--rad-sm); overflow:hidden; border:1px solid var(--brd); }
-        .code-h { display:flex; justify-content:space-between; padding:8px 16px; background:#282c34; border-bottom:1px solid #3e4451; font-size:0.8rem; color:#abb2bf; }
-        .copy-btn { cursor:pointer; display:flex; align-items:center; gap:4px; }
-        .copy-btn:hover { color:#fff; }
-        .code-wrap pre { margin:0; padding:16px; overflow-x:auto; background:var(--code) !important; }
-        .code-wrap pre code { font-family:monospace; font-size:0.85rem; line-height:1.5; }
+/* Navbar */
+nav{
+    width:100%;
+    padding:20px 8%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
 
-        .input-area { padding:16px 20px 24px; }
-        .input-wrap { max-width:var(--max-w); margin:0 auto; }
-        .input-box { display:flex; flex-direction:column; background:var(--bg3); border:1px solid var(--brd); border-radius:16px; padding:12px 16px; transition:border-color 0.2s; }
-        .input-box:focus-within { border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-l); }
-        .file-preview { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-        .file-item { background:var(--bg-h); padding:6px 12px; border-radius:8px; font-size:0.85rem; display:flex; align-items:center; gap:6px; }
-        .file-item button { cursor:pointer; color:var(--t3); font-size:1rem; line-height:1; }
-        .file-item button:hover { color:var(--t1); }
-        .input-row { display:flex; align-items:flex-end; gap:8px; }
-        #user-input { flex:1; resize:none; font-size:1rem; line-height:1.5; max-height:200px; padding:4px 0; background:transparent; }
-        .input-actions { display:flex; gap:8px; align-items:center; }
-        .send-btn, .voice-btn, .file-btn { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; }
-        .send-btn { background:var(--acc); color:white; }
-        .send-btn:hover { background:var(--acc-h); }
-        .send-btn:disabled { background:var(--bg-h); color:var(--t3); cursor:not-allowed; }
-        .voice-btn { background:var(--bg-h); color:var(--t2); }
-        .voice-btn:hover { background:var(--bg-a); color:var(--t1); }
-        .voice-btn.recording { background:#ef4444; color:white; animation:pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform:scale(1); } 50% { transform:scale(1.1); } }
-        .file-btn { background:var(--bg-h); color:var(--t2); }
-        .file-btn:hover { background:var(--bg-a); color:var(--t1); }
-        .stop-btn { width:36px; height:36px; background:#ef4444; color:white; border-radius:10px; display:none; align-items:center; justify-content:center; cursor:pointer; }
-        .stop-btn.active { display:flex; }
-        .footer-text { text-align:center; font-size:0.75rem; color:var(--t3); margin-top:8px; }
+.logo{
+    font-size:28px;
+    font-weight:800;
+}
 
-        .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:1000; opacity:0; visibility:hidden; transition:0.2s; }
-        .modal-bg.active { opacity:1; visibility:visible; }
-        .modal { background:var(--bg2); border:1px solid var(--brd); border-radius:var(--rad); width:90%; max-width:500px; max-height:85vh; overflow-y:auto; }
-        .modal-h { display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid var(--brd); }
-        .modal-b { padding:24px; }
-        .s-group { margin-bottom:20px; }
-        .s-label { display:block; font-size:0.9rem; font-weight:500; margin-bottom:8px; }
-        .s-desc { font-size:0.8rem; color:var(--t3); margin-bottom:8px; }
-        .s-input, .s-textarea { width:100%; padding:10px 12px; background:var(--bg3); border:1px solid var(--brd); border-radius:var(--rad-sm); font-size:0.9rem; transition:border 0.2s; }
-        .s-input:focus, .s-textarea:focus { border-color:var(--acc); }
-        .s-textarea { min-height:80px; resize:vertical; }
-        .row { display:flex; gap:10px; }
-        .btn-primary { background:var(--acc); color:white; padding:10px 20px; border-radius:var(--rad-sm); cursor:pointer; font-weight:500; }
-        .btn-primary:hover { background:var(--acc-h); }
-        .btn-danger { background:#ef4444; color:white; padding:10px 20px; border-radius:var(--rad-sm); cursor:pointer; font-weight:500; }
-        .btn-danger:hover { background:#dc2626; }
+.launch-btn{
+    text-decoration:none;
+    color:white;
+    background:linear-gradient(135deg,#8b5cf6,#3b82f6);
+    padding:12px 20px;
+    border-radius:14px;
+    font-weight:600;
+}
 
-        .dropdown { position:absolute; top:100%; right:0; margin-top:8px; background:var(--bg2); border:1px solid var(--brd); border-radius:var(--rad-sm); box-shadow:var(--shadow); min-width:200px; z-index:100; display:none; }
-        .dropdown.active { display:block; }
-        .dropdown-item { padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; }
-        .dropdown-item:hover { background:var(--bg-h); }
-        .dropdown-divider { height:1px; background:var(--brd); margin:4px 0; }
+/* Hero */
+.hero{
+    min-height:85vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:40px;
+}
 
-        @media (max-width: 768px) {
-            .sidebar { position:absolute; height:100%; z-index:100; box-shadow:0 0 20px rgba(0,0,0,0.5); }
-            .sidebar.collapsed { transform:translateX(-100%); width:var(--sidebar-w); }
-            .sug-grid { grid-template-columns:1fr; }
-            .profile-name { display:none; }
-        }
-    </style>
+.hero-content{
+    max-width:850px;
+}
+
+.hero h1{
+    font-size:4rem;
+    font-weight:800;
+    margin-bottom:20px;
+}
+
+.hero p{
+    font-size:1.2rem;
+    opacity:.8;
+    line-height:1.8;
+}
+
+.hero-buttons{
+    margin-top:35px;
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    text-decoration:none;
+    color:white;
+    padding:14px 24px;
+    border-radius:16px;
+    font-weight:600;
+}
+
+.primary{
+    background:linear-gradient(135deg,#8b5cf6,#3b82f6);
+}
+
+.secondary{
+    background:rgba(255,255,255,.08);
+    backdrop-filter:blur(15px);
+}
+
+/* Features */
+section{
+    padding:100px 8%;
+}
+
+.section-title{
+    text-align:center;
+    font-size:2.5rem;
+    margin-bottom:50px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:rgba(255,255,255,.05);
+    backdrop-filter:blur(15px);
+    border:1px solid rgba(255,255,255,.08);
+    padding:30px;
+    border-radius:24px;
+    transition:.3s;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+}
+
+.card h3{
+    margin-bottom:10px;
+}
+
+/* Why Spax */
+.why{
+    max-width:900px;
+    margin:auto;
+}
+
+.why ul{
+    list-style:none;
+}
+
+.why li{
+    padding:15px 0;
+    font-size:1.1rem;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+/* CTA */
+.cta{
+    text-align:center;
+}
+
+.cta h2{
+    font-size:3rem;
+    margin-bottom:20px;
+}
+
+footer{
+    padding:40px;
+    text-align:center;
+    opacity:.6;
+}
+
+@media(max-width:768px){
+
+.hero h1{
+    font-size:2.6rem;
+}
+
+.section-title{
+    font-size:2rem;
+}
+
+.cta h2{
+    font-size:2rem;
+}
+
+}
+</style>
 </head>
+
 <body>
-    <div class="app">
-        <aside class="sidebar" id="sidebar">
-            <div class="side-h">
-                <button class="btn-new" id="btn-new">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    New Chat
-                </button>
-            </div>
-            <div class="history" id="history"><div class="hist-title">Recent</div></div>
-            <div class="side-f">
-                <button class="btn-new" id="btn-settings" style="width:100%;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    Settings
-                </button>
-            </div>
-        </aside>
 
-        <main class="main">
-            <header class="main-h">
-                <div class="main-h-left">
-                    <button class="icon-btn" id="btn-toggle" title="Toggle Sidebar">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                    </button>
-                    <h1>Spax AI</h1>
-                </div>
-                <div class="h-actions">
-                    <button class="icon-btn" id="btn-theme" title="Toggle Theme">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                    </button>
-                    <div class="profile-btn" id="profile-btn">
-                        <div class="profile-avatar" id="profile-avatar">U</div>
-                        <span class="profile-name" id="profile-name">User</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        <div class="dropdown" id="profile-dropdown">
-                            <div class="dropdown-item" id="menu-profile">👤 Profile Settings</div>
-                            <div class="dropdown-item" id="menu-login">🔐 Sign In</div>
-                            <div class="dropdown-divider"></div>
-                            <div class="dropdown-item" id="menu-logout" style="display:none;">🚪 Sign Out</div>
-                        </div>
-                    </div>
-                </div>
-            </header>
+<div class="stars"></div>
 
-            <div class="chat-area" id="chat-area">
-                <div class="chat-wrap" id="chat-wrap"></div>
-            </div>
+<nav>
+    <div class="logo">✦ SPAX AI</div>
 
-            <div class="input-area">
-                <div class="input-wrap">
-                    <form id="input-form" class="input-box">
-                        <div class="file-preview" id="file-preview"></div>
-                        <div class="input-row">
-                            <textarea id="user-input" placeholder="Message Spax AI..." rows="1"></textarea>
-                            <div class="input-actions">
-                                <input type="file" id="file-input" multiple style="display:none;" accept=".txt,.pdf,.png,.jpg,.jpeg,.gif,.md,.json,.csv">
-                                <button type="button" class="file-btn" id="btn-file" title="Attach files">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                                </button>
-                                <button type="button" class="voice-btn" id="btn-voice" title="Voice input">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                                </button>
-                                <button type="button" class="stop-btn" id="btn-stop"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg></button>
-                                <button type="submit" class="send-btn" id="btn-send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
-                            </div>
-                        </div>
-                    </form>
-                    <div class="footer-text">Spax AI can make mistakes. Check important info.</div>
-                </div>
-            </div>
-        </main>
-    </div>
+    <a href="chat.html" class="launch-btn">
+        Launch Chat
+    </a>
+</nav>
 
-    <!-- Profile Modal -->
-    <div class="modal-bg" id="profile-modal">
-        <div class="modal">
-            <div class="modal-h">
-                <h2>Profile Settings</h2>
-                <button class="icon-btn" id="btn-close-profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            </div>
-            <div class="modal-b">
-                <div class="s-group">
-                    <label class="s-label">Display Name</label>
-                    <input type="text" class="s-input" id="set-name" placeholder="Your Name">
-                </div>
-                <div class="s-group">
-                    <label class="s-label">Avatar (Emoji)</label>
-                    <input type="text" class="s-input" id="set-avatar" placeholder="🤖" maxlength="4">
-                </div>
-                <button class="btn-primary" id="btn-save-profile" style="width:100%;">Save Changes</button>
-            </div>
-        </div>
-    </div>
+<section class="hero">
 
-    <!-- Settings Modal -->
-    <div class="modal-bg" id="settings-modal">
-        <div class="modal">
-            <div class="modal-h">
-                <h2>Settings</h2>
-                <button class="icon-btn" id="btn-close-settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            </div>
-            <div class="modal-b">
-                <div class="s-group">
-                    <label class="s-label">AI Backend Configuration</label>
-                    <input type="password" class="s-input" id="set-key" placeholder="API Key" style="margin-bottom:10px;">
-                    <input type="text" class="s-input" id="set-base" placeholder="Base URL" style="margin-bottom:10px;">
-                    <input type="text" class="s-input" id="set-model" placeholder="Model" style="margin-bottom:10px;">
-                    <input type="text" class="s-input" id="set-url" placeholder="Backend Endpoint">
-                </div>
-                <div class="s-group">
-                    <label class="s-label">System Prompt</label>
-                    <textarea class="s-textarea" id="set-prompt"></textarea>
-                </div>
-                <button class="btn-danger" id="btn-clear" style="width:100%;">Clear All Data</button>
-            </div>
-        </div>
-    </div>
+<div class="hero-content">
 
-    <script>
-        // Firebase Configuration - REPLACE WITH YOUR OWN!
-        const firebaseConfig = {
-  apiKey: "AIzaSyDmDII8ceiGGff8VDUbhFyWiFVhxIkGfNE",
-  authDomain: "spax-ai.firebaseapp.com",
-  projectId: "spax-ai",
-  storageBucket: "spax-ai.firebasestorage.app",
-  messagingSenderId: "924074191093",
-  appId: "1:924074191093:web:b164bc2d54b351467a7dbc"
-};
+<h1>The Galaxy of Intelligence</h1>
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+<p>
+Spax AI is a modern AI assistant designed for learning,
+creating, coding, and everyday conversations.
+Powered by advanced language models and a beautiful
+galaxy-inspired experience.
+</p>
 
-        const $ = id => document.getElementById(id);
-        const state = {
-            chats: {}, activeId: null, isGen: false, abort: null,
-            files: [],
-            settings: {
-                theme: 'dark', userName: 'You', userAvatar: 'U',
-                apiUrl: 'https://hotfinixbrave-spax-ai-backend.hf.space/chat', 
-                apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', 
-                model: 'llama-3.3-70b-versatile',
-                systemPrompt: 'You are Spax AI, a highly intelligent, friendly, and helpful AI assistant. Always format using Markdown.'
-            },
-            user: null
-        };
+<div class="hero-buttons">
 
-        // Auth State Observer
-        auth.onAuthStateChanged(user => {
-            state.user = user;
-            if (user) {
-                $('profile-name').textContent = user.displayName || user.email.split('@')[0];
-                $('profile-avatar').textContent = user.photoURL ? '' : (user.displayName || user.email)[0].toUpperCase();
-                if (user.photoURL) $('profile-avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;">`;
-                $('menu-login').style.display = 'none';
-                $('menu-logout').style.display = 'flex';
-                loadUserData(user.uid);
-            } else {
-                $('profile-name').textContent = state.settings.userName;
-                $('profile-avatar').textContent = state.settings.userAvatar;
-                $('menu-login').style.display = 'flex';
-                $('menu-logout').style.display = 'none';
-            }
-        });
+<a href="chat.html" class="btn primary">
+Launch Spax AI
+</a>
 
-        function init() {
-            const saved = localStorage.getItem('spax_data');
-            if (saved) {
-                const d = JSON.parse(saved);
-                state.chats = d.chats || {};
-                state.activeId = d.activeId || null;
-                state.settings = { ...state.settings, ...d.settings };
-            }
-            applyTheme();
-            renderSidebar();
-            state.activeId && state.chats[state.activeId] ? renderChat() : renderWelcome();
-            setupEvents();
-            autoResize();
-        }
+<a href="#features" class="btn secondary">
+Explore Features
+</a>
 
-        async function loadUserData(uid) {
-            try {
-                const doc = await db.collection('users').doc(uid).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    state.chats = data.chats || {};
-                    state.settings = { ...state.settings, ...data.settings };
-                    state.activeId = data.activeId || null;
-                    renderSidebar();
-                    renderChat();
-                }
-            } catch (e) {
-                console.error('Error loading user data:', e);
-            }
-        }
+</div>
 
-        async function saveUserData() {
-            if (!state.user) return;
-            try {
-                await db.collection('users').doc(state.user.uid).set({
-                    chats: state.chats,
-                    activeId: state.activeId,
-                    settings: state.settings,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            } catch (e) {
-                console.error('Error saving user data:', e);
-            }
-        }
+</div>
 
-        function saveLocal() { 
-            localStorage.setItem('spax_data', JSON.stringify({ chats: state.chats, activeId: state.activeId, settings: state.settings })); 
-            if (state.user) saveUserData();
-        }
+</section>
 
-        function renderSidebar() {
-            const h = $('history');
-            h.innerHTML = '<div class="hist-title">Recent</div>';
-            const sorted = Object.values(state.chats).sort((a,b) => b.createdAt - a.createdAt);
-            if(!sorted.length) { h.innerHTML += '<div style="padding:12px; color:var(--t3); font-size:0.85rem; text-align:center;">No chats yet</div>'; return; }
-            sorted.forEach(c => {
-                const el = document.createElement('div');
-                el.className = `chat-item ${c.id === state.activeId ? 'active' : ''}`;
-                el.onclick = () => switchChat(c.id);
-                el.innerHTML = `<span class="chat-title">${esc(c.title)}</span>
-                    <div class="chat-actions">
-                        <div class="c-btn" onclick="renameChat('${c.id}', event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
-                        <div class="c-btn" onclick="deleteChat('${c.id}', event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div>
-                    </div>`;
-                h.appendChild(el);
-            });
-        }
+<section id="features">
 
-        function renderWelcome() {
-            $('chat-wrap').innerHTML = `
-                <div class="welcome">
-                    <div class="w-logo">S</div>
-                    <h1 style="font-size:2rem; margin-bottom:8px;">How can I help you today?</h1>
-                    <p style="color:var(--t2);">I'm Spax AI, your intelligent assistant.</p>
-                    <div class="sug-grid">
-                        <div class="sug-card" onclick="useSug('Explain quantum computing simply')"><div class="sug-t">Explain a concept</div><div class="sug-d">Quantum computing simply</div></div>
-                        <div class="sug-card" onclick="useSug('Write a Python script to scrape a website')"><div class="sug-t">Write code</div><div class="sug-d">Python web scraper</div></div>
-                        <div class="sug-card" onclick="useSug('Give me 5 sci-fi story ideas')"><div class="sug-t">Brainstorm</div><div class="sug-d">5 sci-fi story ideas</div></div>
-                        <div class="sug-card" onclick="useSug('Analyze this data and find patterns')"><div class="sug-t">Analyze data</div><div class="sug-d">Upload a file to analyze</div></div>
-                    </div>
-                </div>`;
-        }
+<h2 class="section-title">Features</h2>
 
-        function renderChat() {
-            const c = state.chats[state.activeId];
-            if(!c) return renderWelcome();
-            $('chat-wrap').innerHTML = '';
-            c.messages.forEach(m => appendMsg(m.role, m.content, m.files || [], false));
-            scrollDown();
-        }
+<div class="grid">
 
-        function appendMsg(role, content, files=[], anim=true) {
-            const w = $('chat-wrap');
-            if(w.querySelector('.welcome')) w.innerHTML = '';
-            const isUser = role === 'user';
-            const name = isUser ? state.settings.userName : 'Spax AI';
-            const av = isUser ? state.settings.userAvatar : 'S';
-            
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            if(!anim) div.style.animation = 'none';
-            
-            let fileHtml = '';
-            if (files.length > 0) {
-                fileHtml = `<div class="file-attachments">${files.map(f => `<span class="file-tag">📎 ${f.name}</span>`).join('')}</div>`;
-            }
-            
-            div.innerHTML = `
-                <div class="avatar">${av}</div>
-                <div class="msg-content">
-                    <div class="msg-role">${name}</div>
-                    ${fileHtml}
-                    <div class="msg-bubble">${isUser ? esc(content).replace(/\n/g,'<br>') : renderMd(content)}</div>
-                    ${!isUser ? `<div class="msg-actions">
-                        <div class="m-btn" onclick="copyMsg(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</div>
-                        <div class="m-btn" onclick="regen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Regenerate</div>
-                    </div>` : ''}
-                </div>`;
-            w.appendChild(div);
-            highlightCode(div);
-            scrollDown();
-            return div;
-        }
+<div class="card">
+<h3>⚡ Lightning Fast</h3>
+<p>Powered by modern AI inference for rapid responses.</p>
+</div>
 
-        async function send() {
-            const txt = $('user-input').value.trim();
-            if((!txt && state.files.length === 0) || state.isGen) return;
-            if(!state.activeId) newChat();
-            const c = state.chats[state.activeId];
-            if(c.messages.length === 0) { c.title = txt.substring(0, 30) || 'File Upload'; renderSidebar(); }
-            
-            const filesData = state.files.map(f => ({ name: f.name, type: f.type }));
-            c.messages.push({role:'user', content: txt || 'Please analyze these files', files: filesData});
-            appendMsg('user', txt || 'Please analyze these files', filesData);
-            
-            $('user-input').value = ''; autoResize(); 
-            clearFiles();
-            saveLocal();
-            
-            state.isGen = true; toggleUI(true);
-            let full = '', aiEl = null, contentDiv = null;
+<div class="card">
+<h3>🤖 Smart Assistant</h3>
+<p>Ask questions, write content, code, and learn.</p>
+</div>
 
-            try {
-                state.abort = new AbortController();
-                const payload = {
-                    messages: [{role:'system', content:state.settings.systemPrompt}, ...c.messages],
-                    api_key: state.settings.apiKey,
-                    base_url: state.settings.baseUrl,
-                    model: state.settings.model,
-                    files: filesData
-                };
-                
-                const res = await fetch(state.settings.apiUrl, {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify(payload), signal: state.abort.signal
-                });
-                if(!res.ok) throw new Error(`Server Error: ${res.status}`);
+<div class="card">
+<h3>🔒 Private</h3>
+<p>Your settings and conversations stay under your control.</p>
+</div>
 
-                aiEl = appendMsg('assistant', '', []);
-                contentDiv = aiEl.querySelector('.msg-bubble');
-                const reader = res.body.getReader();
-                const dec = new TextDecoder();
-                let buf = '';
+<div class="card">
+<h3>🌌 Modern Design</h3>
+<p>Clean galaxy-themed interface built for comfort.</p>
+</div>
 
-                while(true) {
-                    const {done, value} = await reader.read();
-                    if(done) break;
-                    buf += dec.decode(value, {stream:true});
-                    const lines = buf.split('\n'); buf = lines.pop();
-                    for(const line of lines) {
-                        if(line.startsWith('data: ')) {
-                            const d = line.slice(6);
-                            if(d === '[DONE]') break;
-                            full += d;
-                            contentDiv.innerHTML = renderMd(full);
-                            highlightCode(aiEl);
-                            scrollDown();
-                        }
-                    }
-                }
-                c.messages.push({role:'assistant', content:full}); saveLocal();
-            } catch(e) {
-                if(e.name === 'AbortError') {
-                    if(full) {
-                        if(!aiEl) aiEl = appendMsg('assistant', '', []);
-                        contentDiv = aiEl.querySelector('.msg-bubble');
-                        contentDiv.innerHTML = renderMd(full + '\n\n*[Stopped]*');
-                        c.messages.push({role:'assistant', content:full}); saveLocal();
-                    }
-                } else {
-                    if(!aiEl) aiEl = appendMsg('assistant', '', []);
-                    aiEl.querySelector('.msg-bubble').innerHTML = `<span style="color:#ef4444;">Error: ${e.message}. Check your Backend URL and Settings.</span>`;
-                }
-            } finally {
-                state.isGen = false; state.abort = null; toggleUI(false);
-            }
-        }
+</div>
 
-        // Voice Input
-        let recognition = null;
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
+</section>
 
-            recognition.onresult = (event) => {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
-                    }
-                }
-                if (finalTranscript) {
-                    $('user-input').value += ($('user-input').value ? ' ' : '') + finalTranscript;
-                    autoResize();
-                }
-            };
+<section>
 
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                $('btn-voice').classList.remove('recording');
-            };
+<h2 class="section-title">Why Spax AI?</h2>
 
-            recognition.onend = () => {
-                $('btn-voice').classList.remove('recording');
-            };
-        }
+<div class="why">
 
-        $('btn-voice').onclick = () => {
-            if (!recognition) {
-                alert('Speech recognition is not supported in your browser. Try Chrome or Edge.');
-                return;
-            }
-            if ($('btn-voice').classList.contains('recording')) {
-                recognition.stop();
-                $('btn-voice').classList.remove('recording');
-            } else {
-                recognition.start();
-                $('btn-voice').classList.add('recording');
-            }
-        };
+<ul>
+<li>✓ Beautiful modern interface</li>
+<li>✓ Multiple AI model support</li>
+<li>✓ Markdown and code rendering</li>
+<li>✓ Conversation history</li>
+<li>✓ Cloud synchronization support</li>
+<li>✓ Mobile-friendly experience</li>
+</ul>
 
-        // File Upload
-        $('btn-file').onclick = () => $('file-input').click();
-        $('file-input').onchange = async (e) => {
-            const files = Array.from(e.target.files);
-            for (const file of files) {
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                try {
-                    const res = await fetch(state.settings.apiUrl.replace('/chat', '/upload'), {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await res.json();
-                    state.files.push({ name: file.name, type: file.type, content: data.content });
-                    renderFilePreview();
-                } catch (err) {
-                    console.error('Upload error:', err);
-                    alert(`Failed to upload ${file.name}`);
-                }
-            }
-            $('file-input').value = '';
-        };
+</div>
 
-        function renderFilePreview() {
-            const container = $('file-preview');
-            container.innerHTML = state.files.map((f, i) => `
-                <div class="file-item">
-                    📎 ${f.name}
-                    <button onclick="removeFile(${i})">×</button>
-                </div>
-            `).join('');
-        }
+</section>
 
-        function removeFile(index) {
-            state.files.splice(index, 1);
-            renderFilePreview();
-        }
+<section class="cta">
 
-        function clearFiles() {
-            state.files = [];
-            renderFilePreview();
-        }
+<h2>Ready to explore the galaxy?</h2>
 
-        // Google Sign In
-        $('menu-login').onclick = () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => {
-                console.error('Login error:', err);
-                alert('Login failed: ' + err.message);
-            });
-        };
+<a href="chat.html" class="btn primary">
+Start Chatting
+</a>
 
-        $('menu-logout').onclick = () => {
-            auth.signOut();
-        };
+</section>
 
-        // Profile dropdown
-        $('profile-btn').onclick = (e) => {
-            e.stopPropagation();
-            $('profile-dropdown').classList.toggle('active');
-        };
+<footer>
+© 2026 Spax AI • The Galaxy of Intelligence
+</footer>
 
-        document.addEventListener('click', () => {
-            $('profile-dropdown').classList.remove('active');
-        });
-
-        $('menu-profile').onclick = () => {
-            $('set-name').value = state.settings.userName;
-            $('set-avatar').value = state.settings.userAvatar;
-            $('profile-modal').classList.add('active');
-        };
-
-        $('btn-save-profile').onclick = () => {
-            state.settings.userName = $('set-name').value || 'You';
-            state.settings.userAvatar = $('set-avatar').value || 'U';
-            $('profile-name').textContent = state.user ? (state.user.displayName || state.user.email.split('@')[0]) : state.settings.userName;
-            $('profile-avatar').textContent = state.user ? '' : state.settings.userAvatar;
-            if (!state.user && state.settings.userAvatar) {
-                $('profile-avatar').textContent = state.settings.userAvatar;
-            }
-            $('profile-modal').classList.remove('active');
-            saveLocal();
-            if (state.activeId) renderChat();
-        };
-
-        function setupEvents() {
-            $('input-form').onsubmit = e => { e.preventDefault(); send(); };
-            $('user-input').onkeydown = e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
-            $('user-input').oninput = autoResize;
-            $('btn-stop').onclick = () => state.abort && state.abort.abort();
-            $('btn-new').onclick = newChat;
-            $('btn-toggle').onclick = () => $('sidebar').classList.toggle('collapsed');
-            $('btn-theme').onclick = () => { state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark'; applyTheme(); saveLocal(); };
-            
-            $('btn-settings').onclick = () => {
-                $('set-key').value = state.settings.apiKey;
-                $('set-base').value = state.settings.baseUrl;
-                $('set-model').value = state.settings.model;
-                $('set-url').value = state.settings.apiUrl;
-                $('set-prompt').value = state.settings.systemPrompt;
-                $('settings-modal').classList.add('active');
-            };
-            $('btn-close-settings').onclick = () => $('settings-modal').classList.remove('active');
-            $('settings-modal').onclick = e => { if(e.target === $('settings-modal')) $('settings-modal').classList.remove('active'); };
-            
-            $('btn-close-profile').onclick = () => $('profile-modal').classList.remove('active');
-            $('profile-modal').onclick = e => { if(e.target === $('profile-modal')) $('profile-modal').classList.remove('active'); };
-            
-            ['set-key','set-base','set-model','set-url','set-prompt'].forEach(id => {
-                $(id).onchange = () => {
-                    state.settings.apiKey = $('set-key').value;
-                    state.settings.baseUrl = $('set-base').value;
-                    state.settings.model = $('set-model').value;
-                    state.settings.apiUrl = $('set-url').value;
-                    state.settings.systemPrompt = $('set-prompt').value;
-                    saveLocal();
-                };
-            });
-
-            $('btn-clear').onclick = () => {
-                if(confirm('Delete ALL chats and settings?')) { localStorage.removeItem('spax_data'); location.reload(); }
-            };
-        }
-
-        function newChat() { const id='c_'+Date.now(); state.chats[id]={id, title:'New Chat', messages:[], createdAt:Date.now()}; state.activeId=id; saveLocal(); renderSidebar(); renderChat(); $('user-input').focus(); }
-        function switchChat(id) { if(state.isGen) return; state.activeId=id; saveLocal(); renderSidebar(); renderChat(); }
-        function deleteChat(id, e) { e.stopPropagation(); if(!confirm('Delete?')) return; delete state.chats[id]; if(state.activeId===id) state.activeId=Object.keys(state.chats).pop()||null; saveLocal(); renderSidebar(); state.activeId ? renderChat() : renderWelcome(); }
-        function renameChat(id, e) { e.stopPropagation(); const n=prompt('Rename:', state.chats[id].title); if(n) { state.chats[id].title=n.trim(); saveLocal(); renderSidebar(); } }
-        function useSug(t) { $('user-input').value=t; send(); }
-        function regen() { if(state.isGen) return; const c=state.chats[state.activeId]; if(!c) return; if(c.messages[c.messages.length-1].role==='assistant') c.messages.pop(); const last=c.messages.pop(); saveLocal(); renderChat(); $('user-input').value=last.content; send(); }
-        function copyMsg(btn) { navigator.clipboard.writeText(btn.closest('.msg-content').querySelector('.msg-bubble').innerText); btn.innerHTML='Copied!'; setTimeout(()=>btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy', 2000); }
-        function esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
-        function scrollDown() { requestAnimationFrame(() => $('chat-area').scrollTop = $('chat-area').scrollHeight); }
-        function autoResize() { const i=$('user-input'); i.style.height='auto'; i.style.height=Math.min(i.scrollHeight, 200)+'px'; }
-        function toggleUI(isGen) { $('btn-send').style.display=isGen?'none':'flex'; $('btn-stop').classList.toggle('active', isGen); $('user-input').disabled=isGen; }
-        function applyTheme() { document.documentElement.setAttribute('data-theme', state.settings.theme); }
-        function renderMd(t) { if(!t) return ''; marked.setOptions({breaks:true, gfm:true, highlight:(c,l)=>hljs.getLanguage(l)?hljs.highlight(c,{language:l}).value:hljs.highlightAuto(c).value}); return marked.parse(t); }
-        function highlightCode(el) { el.querySelectorAll('pre code').forEach(b => { if(b.parentElement.classList.contains('code-wrap')) return; const p=b.parentElement; const w=document.createElement('div'); w.className='code-wrap'; const lang=b.className.match(/language-(\w+)/)?.[1]||'code'; w.innerHTML=`<div class="code-h"><span>${lang}</span><div class="copy-btn" onclick="copyCode(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</div></div>`; p.parentNode.insertBefore(w,p); w.appendChild(p); }); }
-        function copyCode(btn) { navigator.clipboard.writeText(btn.closest('.code-wrap').querySelector('code').innerText); btn.innerHTML='Copied!'; setTimeout(()=>btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy', 2000); }
-
-        init();
-    </script>
 </body>
 </html>
