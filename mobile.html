@@ -7,7 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Spax AI</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -89,8 +91,21 @@
         .msg-role { font-weight:600; font-size:0.85rem; margin-bottom:4px; color:var(--t2); }
         .msg-bubble { font-size:1rem; line-height:1.6; word-wrap:break-word; overflow-wrap:break-word; }
         .msg.user .msg-bubble { background:var(--bg3); padding:12px 16px; border-radius:18px; display:inline-block; max-width:100%; }
-        .msg-bubble p { margin-bottom:10px; } .msg-bubble p:last-child { margin-bottom:0; }
-        .msg-bubble ul, .msg-bubble ol { margin:10px 0; padding-left:20px; }
+       .msg-bubble p { margin-bottom:10px; } 
+.msg-bubble p:last-child { margin-bottom:0; }
+.msg-bubble ul, .msg-bubble ol { margin:10px 0; padding-left:20px; }
+.msg-bubble li { margin-bottom: 4px; }
+.msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { margin: 16px 0 8px; font-weight: 600; line-height: 1.3; }
+.msg-bubble h1 { font-size: 1.4rem; }
+.msg-bubble h2 { font-size: 1.25rem; }
+.msg-bubble h3 { font-size: 1.1rem; }
+.msg-bubble strong { font-weight: 700; }
+.msg-bubble em { font-style: italic; }
+.msg-bubble a { color: var(--primary); text-decoration: underline; }
+.msg-bubble blockquote { border-left: 3px solid var(--primary); padding-left: 12px; margin: 12px 0; color: var(--t2); font-style: italic; }
+.msg-bubble table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.9rem; }
+.msg-bubble th, .msg-bubble td { border: 1px solid var(--brd); padding: 8px; text-align: left; }
+.msg-bubble th { background: var(--bg3); font-weight: 600; }
         .msg-bubble code:not(pre code) { background:var(--code); padding:2px 6px; border-radius:4px; font-family:monospace; font-size:0.85em; color:#e06c75; }
         .msg-bubble pre { background:var(--code); padding:12px; border-radius:10px; overflow-x:auto; margin:10px 0; font-size:0.85rem; }
         .msg-actions { display:flex; gap:4px; margin-top:8px; }
@@ -409,10 +424,29 @@
         function autoResize() { const i = $('user-input'); i.style.height = 'auto'; i.style.height = Math.min(i.scrollHeight, 120) + 'px'; }
         function toggleUI(isGen) { $('btn-send').style.display = isGen ? 'none' : 'flex'; $('btn-stop').classList.toggle('active', isGen); $('user-input').disabled = isGen; }
         function applyTheme() { document.documentElement.setAttribute('data-theme', state.settings.theme); }
-        function renderMd(t) { if (!t) return ''; marked.setOptions({ breaks: true, gfm: true }); return marked.parse(t); }
+        function renderMd(t) {
+    if (!t) return '';
+    try {
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                highlight: function(code, lang) {
+                    if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
+                        return hljs.highlight(code, { language: lang }).value;
+                    }
+                    return code;
+                }
+            });
+            return marked.parse(t);
+        }
+        return t.replace(/\n/g, '<br>');
+    } catch (e) {
+        return t.replace(/\n/g, '<br>');
+    }
+}
 
         init();
     </script>
 </body>
-</html>
 </html>
