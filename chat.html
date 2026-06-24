@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spax AI</title>
- <link rel="icon" type="image/png" href="logo.png">
+   <link rel="icon" type="image/png" href="logo.png">
 
 
    
@@ -746,6 +746,10 @@
         function autoResize() { const i=$('user-input'); i.style.height='auto'; i.style.height=Math.min(i.scrollHeight, 200)+'px'; }
         function toggleUI(isGen) { $('btn-send').style.display=isGen?'none':'flex'; $('btn-stop').classList.toggle('active', isGen); $('user-input').disabled=isGen; }
         function applyTheme() { document.documentElement.setAttribute('data-theme', state.settings.theme); }
+        // Dummy function to prevent crashes since we removed highlight.js
+function highlightCode(el) { 
+    // Do nothing
+}
      function renderMd(text) {
     if (!text) return '';
     
