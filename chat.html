@@ -811,6 +811,14 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
         init();
+
+        const isMobile =
+    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || window.innerWidth <= 768;
+
+if (isMobile) {
+    window.location.replace("mobile.html");
+}
     </script>
 </body>
 </html>
