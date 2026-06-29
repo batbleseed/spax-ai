@@ -811,13 +811,27 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
         init();
+(function () {
+    const ua = navigator.userAgent;
 
-        const isMobile =
-    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    || window.innerWidth <= 768;
+    // Detect tablets
+    const isTablet =
+        /iPad|Tablet|PlayBook|Silk/i.test(ua) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        (/Android/i.test(ua) && !/Mobile/i.test(ua));
 
-if (isMobile) {
-    window.location.replace("mobile.html");
+    // Detect phones
+    const isPhone =
+        /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) &&
+        !isTablet;
+
+    if (isTablet) {
+        window.location.replace("tablet.html");
+    } else if (isPhone) {
+        window.location.replace("mobile.html");
+    }
+    // Desktop stays on index.html
+})();
 }
     </script>
 </body>
