@@ -246,8 +246,16 @@
             let full = '', aiEl = null, contentDiv = null;
             try {
                 state.abort = new AbortController();
-                // CLEAN PAYLOAD: Only sending messages, no API keys!
-                const res = await fetch(state.settings.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: state.settings.systemPrompt }, ...c.messages] }), signal: state.abort.signal });
+                // ✅ FIXED HEADERS: Added ngrok-skip-browser-warning to bypass the CORS/Warning block!
+                const res = await fetch(state.settings.apiUrl, { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true' 
+                    }, 
+                    body: JSON.stringify({ messages: [{ role: 'system', content: state.settings.systemPrompt }, ...c.messages] }), 
+                    signal: state.abort.signal 
+                });
                 if (!res.ok) throw new Error(`Server ${res.status}`);
                 aiEl = appendMsg('assistant', ''); contentDiv = aiEl.querySelector('.msg-bubble');
                 const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
