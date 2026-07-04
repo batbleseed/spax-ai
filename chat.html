@@ -333,7 +333,7 @@
         const AUTH_API_BASE = 'https://hotfinixbrave-spax-ai-backend.hf.space';
         // Set this to the OAuth Client ID you create at
         // https://console.cloud.google.com/apis/credentials (type: Web application).
-        const GOOGLE_CLIENT_ID = '738384252062-m8k5dlrgomp03ef1vtftgk4ntrcdt996.apps.googleusercontent.com';
+        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
         const $ = id => document.getElementById(id);
         const state = {
@@ -565,7 +565,9 @@
             const c = state.chats[state.activeId];
             if(c.messages.length === 0) { c.title = txt.substring(0, 30) || 'File Upload'; renderSidebar(); }
             
-            const filesData = state.files.map(f => ({ name: f.name, type: f.type }));
+            // Keep the full extracted content for the API payload, but the UI (appendMsg)
+            // only ever reads f.name, so this doesn't bloat the visible chat bubble.
+            const filesData = state.files.map(f => ({ name: f.name, type: f.type, content: f.content }));
             c.messages.push({role:'user', content: txt || 'Please analyze these files', files: filesData});
             appendMsg('user', txt || 'Please analyze these files', filesData);
             
@@ -880,5 +882,4 @@ function escapeHtml(text) {
         init();
     </script>
 </body>
-</html>
 </html>
