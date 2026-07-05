@@ -185,7 +185,7 @@
         .dropdown-divider { height:1px; background:var(--brd); margin:4px 0; }
 
         @media (max-width: 768px) {
-            .sidebar { position:absolute; height:100%; z-index:100; box-shadow:0 0 20px rgba(0,0,0,0.5); }
+            .sidebar { position:absolute; top:60px; height:calc(100% - 60px); z-index:100; box-shadow:0 0 20px rgba(0,0,0,0.5); }
             .sidebar.collapsed { transform:translateX(-100%); width:var(--sidebar-w); }
             .sug-grid { grid-template-columns:1fr; }
             .profile-name { display:none; }
@@ -426,6 +426,17 @@
             }
         }
 
+        // Fix: on narrow viewports (phones, or a slim embedded panel), the
+        // sidebar's mobile CSS makes it an absolute overlay. If it isn't
+        // collapsed by default there, it sits on top of the input box and
+        // eats clicks/typing meant for the textarea. Collapse it by default
+        // whenever we start out under the mobile breakpoint.
+        function applyResponsiveSidebar() {
+            if (window.innerWidth <= 768) {
+                $('sidebar').classList.add('collapsed');
+            }
+        }
+
         function init() {
             const saved = localStorage.getItem('spax_data');
             if (saved) {
@@ -435,6 +446,7 @@
                 state.settings = { ...state.settings, ...d.settings };
             }
             applyTheme();
+            applyResponsiveSidebar();
             renderSidebar();
             state.activeId && state.chats[state.activeId] ? renderChat() : renderWelcome();
             setupEvents();
@@ -882,4 +894,5 @@ function escapeHtml(text) {
         init();
     </script>
 </body>
+</html>
 </html>
