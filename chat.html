@@ -333,7 +333,7 @@
         const AUTH_API_BASE = 'https://hotfinixbrave-spax-ai-backend.hf.space';
         // Set this to the OAuth Client ID you create at
         // https://console.cloud.google.com/apis/credentials (type: Web application).
-        const GOOGLE_CLIENT_ID = '738384252062-m8k5dlrgomp03ef1vtftgk4ntrcdt996.apps.googleusercontent.com';
+        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
         const $ = id => document.getElementById(id);
         const state = {
@@ -381,6 +381,18 @@
         }
 
         function promptGoogleSignIn() {
+            // Running inside Spax Browser (or any embedded/Electron browser that
+            // injects this bridge): Google blocks the normal popup-based sign-in
+            // inside embedded browsers, so hand off to the host app's real
+            // system-browser OAuth flow instead.
+            if (window.spaxHost && window.spaxHost.signInWithGoogle) {
+                window.spaxHost.signInWithGoogle().then((result) => {
+                    if (!result) return;
+                    if (result.error) { alert(result.error); return; }
+                    if (result.accessToken) handleGoogleToken({ access_token: result.accessToken });
+                });
+                return;
+            }
             if (!googleTokenClient) { alert('Sign-in is still loading, try again in a moment.'); return; }
             googleTokenClient.requestAccessToken();
         }
@@ -894,5 +906,4 @@ function escapeHtml(text) {
         init();
     </script>
 </body>
-</html>
 </html>
