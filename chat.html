@@ -192,6 +192,9 @@
             .sidebar.collapsed { transform:translateX(-100%); width:var(--sidebar-w); }
             .sug-grid { grid-template-columns:1fr; }
             .profile-name { display:none; }
+.image-attachments { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.image-attachments img { max-height:200px; max-width:100%; border-radius:8px; border:1px solid var(--brd); cursor:pointer; transition:transform 0.2s; object-fit:cover; }
+.image-attachments img:hover { transform:scale(1.02); border-color:var(--acc); }
         }
     </style>
 </head>
@@ -552,224 +555,273 @@
             scrollDown();
         }
 
-        function appendMsg(role, content, files=[], anim=true) {
-            const w = $('chat-wrap');
-            if(w.querySelector('.welcome')) w.innerHTML = '';
-            const isUser = role === 'user';
-            const name = isUser ? state.settings.userName : 'Spax AI';
-            const av = isUser ? state.settings.userAvatar : 'S';
-            
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            if(!anim) div.style.animation = 'none';
-            
-            let fileHtml = '';
-            if (files.length > 0) {
-                fileHtml = `<div class="file-attachments">${files.map(f => `<span class="file-tag">📎 ${f.name}</span>`).join('')}</div>`;
-            }
-            
-            div.innerHTML = `
-                <div class="avatar">${av}</div>
-                <div class="msg-content">
-                    <div class="msg-role">${name}</div>
-                    ${fileHtml}
-                    <div class="msg-bubble">${isUser ? esc(content).replace(/\n/g,'<br>') : renderMd(content)}</div>
-                    ${!isUser ? `<div class="msg-actions">
-                        <div class="m-btn" onclick="copyMsg(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</div>
-                        <div class="m-btn" onclick="regen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Regenerate</div>
-                    </div>` : ''}
-                </div>`;
-            w.appendChild(div);
-            highlightCode(div);
-            scrollDown();
-            return div;
-        }
-
-                async function send() {
-            const txt = $('user-input').value.trim();
-            if((!txt && state.files.length === 0) || state.isGen) return;
-            if(!state.activeId) newChat();
-            const c = state.chats[state.activeId];
-            if(c.messages.length === 0) { c.title = txt.substring(0, 30) || 'File Upload'; renderSidebar(); }
-            
-            const filesData = state.files.map(f => ({ name: f.name, type: f.type, content: f.content }));
-            c.messages.push({role:'user', content: txt || 'Please analyze these files', files: filesData});
-            appendMsg('user', txt || 'Please analyze these files', filesData);
-            
-            $('user-input').value = ''; autoResize(); 
-            clearFiles();
-            saveLocal();
-            
-            state.isGen = true; toggleUI(true);
-            let full = '', aiEl = null, contentDiv = null;
-
-            try {
-                state.abort = new AbortController();
-                const payload = {
-                    messages: [{role:'system', content:state.settings.systemPrompt}, ...c.messages],
-                    api_key: state.settings.apiKey,
-                    base_url: state.settings.baseUrl,
-                    model: state.settings.model,
-                    files: filesData
-                };
-                
-                const res = await fetch(state.settings.apiUrl, {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify(payload), signal: state.abort.signal
-                });
-                
-                if(!res.ok) throw new Error(`Server Error: ${res.status}`);
-                
-                aiEl = appendMsg('assistant', '', []);
-                contentDiv = aiEl.querySelector('.msg-bubble');
-                const reader = res.body.getReader();
-                const dec = new TextDecoder();
-                let buf = '';
-                let inCodeBlock = false;
-                
-                while(true) {
-                    const {done, value} = await reader.read();
-                    if(done) break;
-                    buf += dec.decode(value, {stream:true});
-                    const lines = buf.split('\n'); buf = lines.pop();
-                    for(const line of lines) {
-                        if(line.startsWith('data: ')) {
-                            const d = line.slice(6);
-                            if(d === '[DONE]') break;
-                            
-                            const trimmed = d.trim();
-                            
-                            if (trimmed === '') {
-                                full += '\n';
-                            } else if (trimmed.startsWith('```')) {
-                                inCodeBlock = !inCodeBlock;
-                                full += '\n' + trimmed + '\n';
-                            } else if (inCodeBlock) {
-                                full += d + ' ';
-                            } else if (/^#{1,6}\s/.test(trimmed)) {
-                                full += '\n' + d + '\n';
-                            } else if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^>/.test(trimmed)) {
-                                full += '\n' + d + ' ';
-                            } else {
-                                full += d + ' ';
-                            }
-                            
-                            contentDiv.innerHTML = renderMd(full);
-                            highlightCode(aiEl);
-                            scrollDown();
-                        }
-                    }
-                }
-                c.messages.push({role:'assistant', content:full}); saveLocal();
-            } catch(e) {
-                if(e.name === 'AbortError') {
-                    if(full) {
-                        if(!aiEl) aiEl = appendMsg('assistant', '', []);
-                        contentDiv = aiEl.querySelector('.msg-bubble');
-                        contentDiv.innerHTML = renderMd(full + '\n\n*[Stopped]*');
-                        c.messages.push({role:'assistant', content:full}); saveLocal();
-                    }
-                } else {
-                    if(!aiEl) aiEl = appendMsg('assistant', '', []);
-                    aiEl.querySelector('.msg-bubble').innerHTML = `<span style="color:#ef4444;">Error: ${e.message}. Check your Backend URL and Settings.</span>`;
-                }
-            } finally {
-                state.isGen = false; state.abort = null; toggleUI(false);
-            }
-        }
-
+  function appendMsg(role, content, files=[], anim=true) {
+    const w = $('chat-wrap');
+    if(w.querySelector('.welcome')) w.innerHTML = '';
+    const isUser = role === 'user';
+    const name = isUser ? state.settings.userName : 'Spax AI';
+    const av = isUser ? state.settings.userAvatar : 'S';
     
-        // Voice Input
-        let recognition = null;
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-
-            recognition.onresult = (event) => {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    if(!anim) div.style.animation = 'none';
+    
+    let fileHtml = '';
+    if (files.length > 0) {
+        const imageFiles = files.filter(f => f.type && f.type.startsWith('image/'));
+        const otherFiles = files.filter(f => !f.type || !f.type.startsWith('image/'));
+        
+        let imagesHtml = '';
+        if (imageFiles.length > 0) {
+            imagesHtml = `<div class="image-attachments">${
+                imageFiles.map(f => {
+                    const preview = f.preview || (f.content && f.content.startsWith('data:') ? f.content : null);
+                    if (preview) {
+                        return `<img src="${preview}" onclick="window.open('${preview}')" title="${f.name}">`;
                     }
-                }
-                if (finalTranscript) {
-                    $('user-input').value += ($('user-input').value ? ' ' : '') + finalTranscript;
-                    autoResize();
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                $('btn-voice').classList.remove('recording');
-            };
-
-            recognition.onend = () => {
-                $('btn-voice').classList.remove('recording');
-            };
+                    return `<span class="file-tag">🖼️ ${f.name}</span>`;
+                }).join('')
+            }</div>`;
         }
+        
+        let othersHtml = '';
+        if (otherFiles.length > 0) {
+            othersHtml = `<div class="file-attachments">${otherFiles.map(f => `<span class="file-tag">📎 ${f.name}</span>`).join('')}</div>`;
+        }
+        
+        fileHtml = imagesHtml + othersHtml;
+    }
+    
+    div.innerHTML = `
+        <div class="avatar">${av}</div>
+        <div class="msg-content">
+            <div class="msg-role">${name}</div>
+            ${fileHtml}
+            <div class="msg-bubble">${isUser ? esc(content).replace(/\n/g,'<br>') : renderMd(content)}</div>
+            ${!isUser ? `<div class="msg-actions">
+                <div class="m-btn" onclick="copyMsg(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</div>
+                <div class="m-btn" onclick="regen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Regenerate</div>
+            </div>` : ''}
+        </div>`;
+    w.appendChild(div);
+    highlightCode(div);
+    scrollDown();
+    return div;
+}
 
-        $('btn-voice').onclick = () => {
-            if (!recognition) {
-                alert('Speech recognition is not supported in your browser. Try Chrome or Edge.');
-                return;
+async function send() {
+    const txt = $('user-input').value.trim();
+    if((!txt && state.files.length === 0) || state.isGen) return;
+    if(!state.activeId) newChat();
+    const c = state.chats[state.activeId];
+    if(c.messages.length === 0) { c.title = txt.substring(0, 30) || 'File Upload'; renderSidebar(); }
+    
+    const filesData = state.files.map(f => ({ name: f.name, type: f.type, content: f.content }));
+    c.messages.push({role:'user', content: txt || 'Please analyze these files', files: filesData});
+    appendMsg('user', txt || 'Please analyze these files', filesData);
+    
+    $('user-input').value = ''; autoResize(); 
+    clearFiles();
+    saveLocal();
+    
+    state.isGen = true; toggleUI(true);
+    let full = '', aiEl = null, contentDiv = null;
+
+    try {
+        state.abort = new AbortController();
+        const payload = {
+            messages: [{role:'system', content:state.settings.systemPrompt}, ...c.messages],
+            api_key: state.settings.apiKey,
+            base_url: state.settings.baseUrl,
+            model: state.settings.model,
+            files: filesData
+        };
+        
+        const res = await fetch(state.settings.apiUrl, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload), signal: state.abort.signal
+        });
+        
+        if(!res.ok) throw new Error(`Server Error: ${res.status}`);
+        
+        aiEl = appendMsg('assistant', '', []);
+        contentDiv = aiEl.querySelector('.msg-bubble');
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        let inCodeBlock = false;
+        
+        while(true) {
+            const {done, value} = await reader.read();
+            if(done) break;
+            buf += dec.decode(value, {stream:true});
+            const lines = buf.split('\n'); buf = lines.pop();
+            for(const line of lines) {
+                if(line.startsWith('data: ')) {
+                    const d = line.slice(6);
+                    if(d === '[DONE]') break;
+                    
+                    const trimmed = d.trim();
+                    
+                    if (trimmed === '') {
+                        full += '\n';
+                    } else if (trimmed.startsWith('```')) {
+                        inCodeBlock = !inCodeBlock;
+                        full += '\n' + trimmed + '\n';
+                    } else if (inCodeBlock) {
+                        full += d + ' ';
+                    } else if (/^#{1,6}\s/.test(trimmed)) {
+                        full += '\n' + d + '\n';
+                    } else if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^>/.test(trimmed)) {
+                        full += '\n' + d + ' ';
+                    } else {
+                        full += d + ' ';
+                    }
+                    
+                    contentDiv.innerHTML = renderMd(full);
+                    highlightCode(aiEl);
+                    scrollDown();
+                }
             }
-            if ($('btn-voice').classList.contains('recording')) {
-                recognition.stop();
-                $('btn-voice').classList.remove('recording');
+        }
+        c.messages.push({role:'assistant', content:full}); saveLocal();
+    } catch(e) {
+        if(e.name === 'AbortError') {
+            if(full) {
+                if(!aiEl) aiEl = appendMsg('assistant', '', []);
+                contentDiv = aiEl.querySelector('.msg-bubble');
+                contentDiv.innerHTML = renderMd(full + '\n\n*[Stopped]*');
+                c.messages.push({role:'assistant', content:full}); saveLocal();
+            }
+        } else {
+            if(!aiEl) aiEl = appendMsg('assistant', '', []);
+            aiEl.querySelector('.msg-bubble').innerHTML = `<span style="color:#ef4444;">Error: ${e.message}. Check your Backend URL and Settings.</span>`;
+        }
+    } finally {
+        state.isGen = false; state.abort = null; toggleUI(false);
+    }
+}
+
+// Voice Input
+let recognition = null;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+            }
+        }
+        if (finalTranscript) {
+            $('user-input').value += ($('user-input').value ? ' ' : '') + finalTranscript;
+            autoResize();
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        $('btn-voice').classList.remove('recording');
+    };
+
+    recognition.onend = () => {
+        $('btn-voice').classList.remove('recording');
+    };
+}
+
+$('btn-voice').onclick = () => {
+    if (!recognition) {
+        alert('Speech recognition is not supported in your browser. Try Chrome or Edge.');
+        return;
+    }
+    if ($('btn-voice').classList.contains('recording')) {
+        recognition.stop();
+        $('btn-voice').classList.remove('recording');
+    } else {
+        recognition.start();
+        $('btn-voice').classList.add('recording');
+    }
+};
+
+// File Upload
+$('btn-file').onclick = () => $('file-input').click();
+$('file-input').onchange = async (e) => {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                state.files.push({ 
+                    name: file.name, 
+                    type: file.type, 
+                    content: null,
+                    preview: event.target.result
+                });
+                renderFilePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const res = await fetch(state.settings.apiUrl.replace('/chat', '/upload'), {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            const existing = state.files.find(f => f.name === file.name);
+            if (existing) {
+                existing.content = data.content;
             } else {
-                recognition.start();
-                $('btn-voice').classList.add('recording');
+                state.files.push({ name: file.name, type: file.type, content: data.content });
             }
-        };
+            renderFilePreview();
+        } catch (err) {
+            console.error('Upload error:', err);
+            alert(`Failed to upload ${file.name}`);
+        }
+    }
+    $('file-input').value = '';
+};
 
-        // File Upload
-        $('btn-file').onclick = () => $('file-input').click();
-        $('file-input').onchange = async (e) => {
-            const files = Array.from(e.target.files);
-            for (const file of files) {
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                try {
-                    const res = await fetch(state.settings.apiUrl.replace('/chat', '/upload'), {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await res.json();
-                    state.files.push({ name: file.name, type: file.type, content: data.content });
-                    renderFilePreview();
-                } catch (err) {
-                    console.error('Upload error:', err);
-                    alert(`Failed to upload ${file.name}`);
-                }
-            }
-            $('file-input').value = '';
-        };
-
-        function renderFilePreview() {
-            const container = $('file-preview');
-            container.innerHTML = state.files.map((f, i) => `
-                <div class="file-item">
-                    📎 ${f.name}
-                    <button onclick="removeFile(${i})">×</button>
+function renderFilePreview() {
+    const container = $('file-preview');
+    container.innerHTML = state.files.map((f, i) => {
+        if (f.preview && f.type && f.type.startsWith('image/')) {
+            return `
+                <div class="file-item" style="padding:4px;position:relative;">
+                    <img src="${f.preview}" style="height:60px;width:auto;border-radius:6px;cursor:pointer;display:block;" onclick="window.open('${f.preview}')" title="${f.name}">
+                    <button onclick="removeFile(${i})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border:none;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;">×</button>
                 </div>
-            `).join('');
+            `;
         }
+        return `
+            <div class="file-item">
+                📎 ${f.name}
+                <button onclick="removeFile(${i})">×</button>
+            </div>
+        `;
+    }).join('');
+}
 
-        function removeFile(index) {
-            state.files.splice(index, 1);
-            renderFilePreview();
-        }
+function removeFile(index) {
+    state.files.splice(index, 1);
+    renderFilePreview();
+}
 
-        function clearFiles() {
-            state.files = [];
-            renderFilePreview();
-        }
-
+function clearFiles() {
+    state.files = [];
+    renderFilePreview();
+}
         // Google Sign In
         $('menu-login').onclick = () => {
             promptGoogleSignIn();
