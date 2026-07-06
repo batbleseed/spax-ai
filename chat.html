@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spax AI</title>
    <link rel="icon" type="image/png" href="logo.png">
-
+   
+    <!-- Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
    
    
@@ -582,15 +585,13 @@
             return div;
         }
 
-        async function send() {
+                async function send() {
             const txt = $('user-input').value.trim();
             if((!txt && state.files.length === 0) || state.isGen) return;
             if(!state.activeId) newChat();
             const c = state.chats[state.activeId];
             if(c.messages.length === 0) { c.title = txt.substring(0, 30) || 'File Upload'; renderSidebar(); }
             
-            // Keep the full extracted content for the API payload, but the UI (appendMsg)
-            // only ever reads f.name, so this doesn't bloat the visible chat bubble.
             const filesData = state.files.map(f => ({ name: f.name, type: f.type, content: f.content }));
             c.messages.push({role:'user', content: txt || 'Please analyze these files', files: filesData});
             appendMsg('user', txt || 'Please analyze these files', filesData);
@@ -624,6 +625,7 @@
                 const reader = res.body.getReader();
                 const dec = new TextDecoder();
                 let buf = '';
+                let inCodeBlock = false;
                 
                 while(true) {
                     const {done, value} = await reader.read();
@@ -634,7 +636,24 @@
                         if(line.startsWith('data: ')) {
                             const d = line.slice(6);
                             if(d === '[DONE]') break;
-                            full += d;
+                            
+                            const trimmed = d.trim();
+                            
+                            if (trimmed === '') {
+                                full += '\n';
+                            } else if (trimmed.startsWith('```')) {
+                                inCodeBlock = !inCodeBlock;
+                                full += '\n' + trimmed + '\n';
+                            } else if (inCodeBlock) {
+                                full += d + ' ';
+                            } else if (/^#{1,6}\s/.test(trimmed)) {
+                                full += '\n' + d + '\n';
+                            } else if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^>/.test(trimmed)) {
+                                full += '\n' + d + ' ';
+                            } else {
+                                full += d + ' ';
+                            }
+                            
                             contentDiv.innerHTML = renderMd(full);
                             highlightCode(aiEl);
                             scrollDown();
@@ -659,6 +678,7 @@
             }
         }
 
+    
         // Voice Input
         let recognition = null;
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -839,70 +859,184 @@
         function autoResize() { const i=$('user-input'); i.style.height='auto'; i.style.height=Math.min(i.scrollHeight, 200)+'px'; }
         function toggleUI(isGen) { $('btn-send').style.display=isGen?'none':'flex'; $('btn-stop').classList.toggle('active', isGen); $('user-input').disabled=isGen; }
         function applyTheme() { document.documentElement.setAttribute('data-theme', state.settings.theme); }
-        // Dummy function to prevent crashes since we removed highlight.js
-function highlightCode(el) { 
-    // Do nothing
-}
-     function renderMd(text) {
+
+        // ===== FIXED MARKDOWN RENDERING =====
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderMd(text) {
     if (!text) return '';
     
-    // Code blocks (must be first to prevent inner formatting)
-    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
-        return '<pre><code class="language-' + (lang || 'text') + '">' + escapeHtml(code.trim()) + '</code></pre>';
+    // Protect code blocks first
+    const codeBlocks = [];
+    text = text.replace(/```(\w+)?\s*([\s\S]*?)```/g, function(match, lang, code) {
+        const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+        codeBlocks.push({ lang: lang || 'text', code: code.trim() });
+        return placeholder;
     });
     
-    // Inline code
-    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    // Headers (H1-H6)
-    text = text.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
-    text = text.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
-    text = text.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-    text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-    
-    // Bold and italic
-    text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    
-    // Links
-    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-    
-    // Blockquotes
-    text = text.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
-    
-    // Unordered lists
-    text = text.replace(/^\* (.*$)/gim, '<li>$1</li>');
-    text = text.replace(/^- (.*$)/gim, '<li>$1</li>');
-    
-    // Ordered lists
-    text = text.replace(/^\d+\. (.*$)/gim, '<li>$1</li>');
-    
-    // Wrap consecutive <li> in <ul>
-    text = text.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
-        return '<ul>' + match + '</ul>';
+    // Protect inline code
+    const inlineCodes = [];
+    text = text.replace(/`([^`]+)`/g, function(match, code) {
+        const placeholder = `__INLINE_CODE_${inlineCodes.length}__`;
+        inlineCodes.push(code);
+        return placeholder;
     });
     
-    // Horizontal rules
-    text = text.replace(/^---$/gim, '<hr>');
+    // Add newlines before markdown block patterns so line-based parsing works
+    // Header patterns
+    text = text.replace(/(#{1,6})\s+(.+?)(?=\n#{1,6}\s+|$)/g, '\n$1 $2\n');
     
-    // Line breaks (convert newlines to <br> except inside pre/code blocks)
-    text = text.replace(/\n/g, '<br>');
+    // Unordered list patterns
+    text = text.replace(/(\n|^)\s*[-*]\s+(.+?)(?=\n\s*[-*]\s+|\n\s*\d+\s*\.|\n#{1,6}\s+|$)/g, '\n* $2\n');
     
-    // Clean up extra <br> after block elements
-    text = text.replace(/<\/(h[1-6]|pre|blockquote|ul|hr)><br>/g, '</$1>');
-    text = text.replace(/<br><(h[1-6]|pre|blockquote|ul|hr)/g, '<$1');
+    // Ordered list patterns — handles "1 ." and "1."
+    text = text.replace(/(\n|^)\s*(\d+)\s*\.\s+(.+?)(?=\n\s*\d+\s*\.|\n\s*[-*]\s+|\n#{1,6}\s+|$)/g, '\n$2. $3\n');
     
-    return text;
+    // Blockquote
+    text = text.replace(/(\n|^)>\s?(.+?)(?=\n>|$)/g, '\n> $2\n');
+    
+    // Horizontal rule
+    text = text.replace(/(\n|^)---+\s*(\n|$)/g, '\n<hr>\n');
+    
+    // Now split by newlines and process
+    const lines = text.split('\n');
+    let result = [];
+    let inList = false;
+    let listType = null;
+    let listItems = [];
+    
+    function flushList() {
+        if (listItems.length > 0) {
+            const tag = listType === 'ol' ? 'ol' : 'ul';
+            result.push(`<${tag}>` + listItems.join('') + `</${tag}>`);
+            listItems = [];
+            inList = false;
+            listType = null;
+        }
+    }
+    
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+        
+        // Horizontal rule
+        if (line === '<hr>') {
+            flushList();
+            result.push('<hr>');
+            continue;
+        }
+        
+        // Headers
+        const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headerMatch) {
+            flushList();
+            const level = headerMatch[1].length;
+            result.push(`<h${level}>${processInline(headerMatch[2])}</h${level}>`);
+            continue;
+        }
+        
+        // Blockquote
+        const bqMatch = line.match(/^>\s?(.+)$/);
+        if (bqMatch) {
+            flushList();
+            result.push(`<blockquote>${processInline(bqMatch[1])}</blockquote>`);
+            continue;
+        }
+        
+        // Unordered list
+        const ulMatch = line.match(/^[-*]\s+(.+)$/);
+        if (ulMatch) {
+            if (!inList || listType !== 'ul') flushList();
+            inList = true;
+            listType = 'ul';
+            listItems.push(`<li>${processInline(ulMatch[1])}</li>`);
+            continue;
+        }
+        
+        // Ordered list — handles "1. text" and "1 . text"
+        const olMatch = line.match(/^(\d+)\s*\.\s+(.+)$/);
+        if (olMatch) {
+            if (!inList || listType !== 'ol') flushList();
+            inList = true;
+            listType = 'ol';
+            listItems.push(`<li value="${olMatch[1]}">${processInline(olMatch[2])}</li>`);
+            continue;
+        }
+        
+        // Regular paragraph
+        flushList();
+        result.push(`<p>${processInline(line)}</p>`);
+    }
+    
+    flushList();
+    
+    let html = result.join('\n');
+    
+    // Restore code blocks
+    codeBlocks.forEach((block, i) => {
+        const placeholder = `__CODE_BLOCK_${i}__`;
+        const lang = escapeHtml(block.lang);
+        const code = escapeHtml(block.code);
+        const codeHtml = `
+<div class="code-wrap">
+    <div class="code-h">
+        <span>${lang}</span>
+        <span class="copy-btn" onclick="copyCode(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy
+        </span>
+    </div>
+    <pre><code class="language-${lang}">${code}</code></pre>
+</div>`;
+        html = html.replace(placeholder, codeHtml);
+    });
+    
+    // Restore inline code
+    inlineCodes.forEach((code, i) => {
+        html = html.replace(`__INLINE_CODE_${i}__`, `<code>${escapeHtml(code)}</code>`);
+    });
+    
+    return html;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+
+        function processInline(text) {
+            // Bold + italic
+            text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            // Bold
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            // Italic
+            text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            // Links
+            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+            // Strikethrough
+            text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
+            return text;
+        }
+
+        function copyCode(btn) {
+            const code = btn.closest('.code-wrap').querySelector('pre code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy';
+                }, 2000);
+            });
+        }
+
+        function highlightCode(el) {
+            if (window.hljs) {
+                el.querySelectorAll('pre code').forEach(block => {
+                    hljs.highlightElement(block);
+                });
+            }
+        }
+        // ===== END FIXED MARKDOWN RENDERING =====
+
         init();
     </script>
 </body>
